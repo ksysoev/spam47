@@ -1,0 +1,21 @@
+openapi: "3.0.0"
+info:
+  title: Spam47 Service API
+  version: 1.0.0
+paths:
+  /livez:
+    get:
+      operationId: heakthCheck
+      summary: Service Health Check
+      responses:
+        '200':
+          description: |-
+            Service is healthy
+          content:
+            application/json:
+              examples: 
+                healthy:
+                  value: |-
+                    {
+                      "status": "OK"
+                    }
