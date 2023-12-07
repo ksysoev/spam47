@@ -11,7 +11,7 @@ func New() *App {
 func (a *App) Mux() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/livezm", a.HeathCheck)
+	mux.HandleFunc("/livez", a.HeathCheck)
 
 	return mux
 }
