@@ -1,20 +1,20 @@
 package main
 
 import (
-	"net/http"
+	"log/slog"
 	"os"
 
 	"github.com/ksysoev/spam47/pkg/app"
 )
 
 func main() {
-	port := os.Getenv("SPAM47_PORT")
+	server := app.New()
+	err := server.Run()
 
-	if port == "" {
-		port = "80"
+	if err != nil {
+		slog.Error("Fail to start app server", "error", err)
+		os.Exit(1)
 	}
 
-	server := app.New()
-
-	http.ListenAndServe(":"+port, server.Mux())
+	os.Exit(0)
 }
