@@ -3,16 +3,28 @@ package app
 import (
 	"log/slog"
 	"net/http"
+
+	"github.com/jbrukh/bayesian"
 )
 
 const (
 	DEFAULT_PORT = "80"
 )
 
-type App struct{}
+const (
+	Spam bayesian.Class = "Spam"
+	Ham  bayesian.Class = "Ham"
+)
+
+type App struct {
+	engine *bayesian.Classifier
+}
 
 func New() *App {
-	return &App{}
+
+	return &App{
+		engine: bayesian.NewClassifier(Spam, Ham),
+	}
 }
 
 func (a *App) Run() error {
