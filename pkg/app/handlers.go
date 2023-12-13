@@ -12,8 +12,45 @@ func (a *App) HeathCheck(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("{\"status\": \"OK\"}"))
 }
 
-func (a *App) Check(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte("HAM"))
+type CheckRequest struct {
+	Message string `json:"message"`
+	Lang    string `json:"lang"`
+}
+
+type CheckResponse struct {
+	Status string  `json:"status"`
+	Score  float64 `json:"score"`
+}
+
+func (a *App) Check(w http.ResponseWriter, r *http.Request) {
+	var req CheckRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	msg := stopwords.CleanString(req.Message, req.Lang, true)
+	words := strings.Fields(msg)
+
+	probs, indx, _ := a.engine.ProbScores(words)
+
+	class := a.engine.Classes[indx]
+
+	resp := CheckResponse{
+		Status: string(class),
+		Score:  probs[indx],
+	}
+
+	respJSON, err := json.Marshal(resp)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(respJSON)
 }
 
 type TrainRequest struct {
