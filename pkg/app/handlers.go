@@ -14,7 +14,7 @@ func (a *App) HeathCheck(w http.ResponseWriter, _ *http.Request) {
 
 type CheckRequest struct {
 	Message string `json:"message"`
-	Lang    string `json:"lang"`
+	Lang    string `json:"lang,omitempty"`
 }
 
 type CheckResponse struct {
@@ -56,7 +56,7 @@ func (a *App) Check(w http.ResponseWriter, r *http.Request) {
 type TrainRequest struct {
 	Message string `json:"message"`
 	Type    string `json:"type"`
-	Lang    string `json:"lang"`
+	Lang    string `json:"lang,omitempty"`
 }
 
 func (a *App) Train(w http.ResponseWriter, r *http.Request) {

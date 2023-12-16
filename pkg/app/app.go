@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/jbrukh/bayesian"
+	"github.com/ksysoev/spam47/pkg/repo"
 )
 
 const (
@@ -17,11 +18,11 @@ const (
 )
 
 type App struct {
-	engine *bayesian.Classifier
+	engine     *bayesian.Classifier
+	engineRepo repo.EngineRepo
 }
 
 func New() *App {
-
 	return &App{
 		engine: bayesian.NewClassifier(Spam, Ham),
 	}
@@ -31,6 +32,14 @@ func (a *App) Run() error {
 	listen := ":" + DEFAULT_PORT
 
 	slog.Info("Starting app server on " + listen)
+
+	repo, err := repo.NewEngineRedisRepo()
+	if err != nil {
+		return err
+	}
+
+	a.engineRepo = repo
+
 	return http.ListenAndServe(listen, a.Mux())
 }
 
