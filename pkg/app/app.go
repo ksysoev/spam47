@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/jbrukh/bayesian"
 	"github.com/ksysoev/spam47/pkg/repo"
 )
 
@@ -12,20 +11,12 @@ const (
 	DEFAULT_PORT = "80"
 )
 
-const (
-	Spam bayesian.Class = "Spam"
-	Ham  bayesian.Class = "Ham"
-)
-
 type App struct {
-	engine     *bayesian.Classifier
 	engineRepo repo.EngineRepo
 }
 
 func New() *App {
-	return &App{
-		engine: bayesian.NewClassifier(Spam, Ham),
-	}
+	return &App{}
 }
 
 func (a *App) Run() error {

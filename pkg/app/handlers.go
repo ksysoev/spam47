@@ -3,9 +3,8 @@ package app
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
-	"github.com/bbalet/stopwords"
+	"github.com/ksysoev/spam47/pkg/aggr"
 )
 
 func (a *App) HeathCheck(w http.ResponseWriter, _ *http.Request) {
@@ -31,16 +30,17 @@ func (a *App) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := stopwords.CleanString(req.Message, req.Lang, true)
-	words := strings.Fields(msg)
+	engine, err := aggr.NewSpamEngine(a.engineRepo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	probs, indx, _ := a.engine.ProbScores(words)
-
-	class := a.engine.Classes[indx]
+	status, score := engine.Check(req.Message, req.Lang)
 
 	resp := CheckResponse{
-		Status: string(class),
-		Score:  probs[indx],
+		Status: status,
+		Score:  score,
 	}
 
 	respJSON, err := json.Marshal(resp)
@@ -68,16 +68,16 @@ func (a *App) Train(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := stopwords.CleanString(req.Message, req.Lang, true)
-	words := strings.Fields(msg)
+	engine, err := aggr.NewSpamEngine(a.engineRepo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	switch req.Type {
-	case "spam":
-		a.engine.Learn(words, Spam)
-	case "ham":
-		a.engine.Learn(words, Ham)
-	default:
-		http.Error(w, "invalid type", http.StatusBadRequest)
+	err = engine.Train(req.Message, req.Type, req.Lang)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

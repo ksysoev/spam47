@@ -7,7 +7,10 @@ import (
 	"github.com/redis/rueidis"
 )
 
-type EngineRepo interface{}
+type EngineRepo interface {
+	Save(class string, data []string) error
+	Load(class string) ([]string, error)
+}
 
 type EngineRedisRepo struct {
 	redis rueidis.Client
