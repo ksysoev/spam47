@@ -10,33 +10,23 @@ import (
 
 type SpamEngine struct {
 	classifier *bayesian.Classifier
+	repo       repo.ClassifieRepo
 }
 
-const (
-	Spam bayesian.Class = "Spam"
-	Ham  bayesian.Class = "Ham"
-)
-
-func NewSpamEngine(repo repo.EngineRepo) (*SpamEngine, error) {
-	classifier := bayesian.NewClassifier(Spam, Ham)
-
-	spam, err := repo.Load(string(Spam))
+func NewSpamEngine(repo repo.ClassifieRepo) (*SpamEngine, error) {
+	classifier, err := repo.Load()
 	if err != nil {
 		return nil, err
 	}
-
-	classifier.Learn(spam, Spam)
-
-	ham, err := repo.Load(string(Ham))
-	if err != nil {
-		return nil, err
-	}
-
-	classifier.Learn(ham, Ham)
 
 	return &SpamEngine{
 		classifier: classifier,
+		repo:       repo,
 	}, nil
+}
+
+func (e *SpamEngine) Classifier() *bayesian.Classifier {
+	return e.classifier
 }
 
 func (e *SpamEngine) Check(message, lang string) (string, float64) {
@@ -54,12 +44,5 @@ func (e *SpamEngine) Train(message, class, lang string) error {
 	msg := stopwords.CleanString(message, lang, true)
 	words := strings.Fields(msg)
 
-	switch class {
-	case "spam":
-		e.classifier.Learn(words, Spam)
-	case "ham":
-		e.classifier.Learn(words, Ham)
-	}
-
-	return nil
+	return e.repo.Update(e.classifier, class, words)
 }

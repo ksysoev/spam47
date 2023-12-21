@@ -3,8 +3,6 @@ package app
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/ksysoev/spam47/pkg/aggr"
 )
 
 func (a *App) HeathCheck(w http.ResponseWriter, _ *http.Request) {
@@ -30,13 +28,12 @@ func (a *App) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	engine, err := aggr.NewSpamEngine(a.engineRepo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	status, score := engine.Check(req.Message, req.Lang)
+	status, score := a.engine.Check(req.Message, req.Lang)
 
 	resp := CheckResponse{
 		Status: status,
@@ -68,13 +65,12 @@ func (a *App) Train(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	engine, err := aggr.NewSpamEngine(a.engineRepo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = engine.Train(req.Message, req.Type, req.Lang)
+	err = a.engine.Train(req.Message, req.Type, req.Lang)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,48 +1,59 @@
 package repo
 
 import (
-	"context"
-	"time"
+	"errors"
+	"os"
 
-	"github.com/redis/rueidis"
+	"github.com/jbrukh/bayesian"
 )
 
-type EngineRepo interface {
-	Save(class string, data []string) error
-	Load(class string) ([]string, error)
+type ClassifieRepo interface {
+	Save(classifier *bayesian.Classifier) error
+	Load() (*bayesian.Classifier, error)
+	Update(classifier *bayesian.Classifier, class string, words []string) error
 }
 
-type EngineRedisRepo struct {
-	redis rueidis.Client
+const (
+	Spam bayesian.Class = "Spam"
+	Ham  bayesian.Class = "Ham"
+)
+
+type ClassifierFileRepo struct {
+	filepath string
 }
 
-func NewEngineRedisRepo() (*EngineRedisRepo, error) {
-	redis, err := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"127.0.0.1:6379"}})
+func NewClassifierFileRepo(filepath string) *ClassifierFileRepo {
+	return &ClassifierFileRepo{
+		filepath: filepath,
+	}
+}
 
-	if err != nil {
-		return nil, err
+func (r *ClassifierFileRepo) Save(classifier *bayesian.Classifier) error {
+	return classifier.WriteToFile(r.filepath)
+}
+
+func (r *ClassifierFileRepo) Load() (*bayesian.Classifier, error) {
+	if _, err := os.Stat(r.filepath); os.IsNotExist(err) {
+		classifier := bayesian.NewClassifier(Spam, Ham)
+		if err := r.Save(classifier); err != nil {
+			return nil, err
+		}
+
+		return classifier, nil
 	}
 
-	return &EngineRedisRepo{
-		redis: redis,
-	}, nil
+	return bayesian.NewClassifierFromFile(r.filepath)
 }
 
-func (e *EngineRedisRepo) Save(class string, data []string) error {
-	cmd := e.redis.B().Sadd().Key(class).Member(data...).Build()
-	e.redis.Do(context.Background(), cmd)
-	return nil
-}
-
-func (e *EngineRedisRepo) Load(class string) (data []string, err error) {
-	// This provides Redis client-side caching support.
-	// If data is updated in redis, cache will be invalidated.
-	cmd := e.redis.B().Smembers().Key(class).Cache()
-	resp := e.redis.DoCache(context.Background(), cmd, time.Hour)
-
-	if err := resp.Error(); err != nil {
-		return nil, err
+func (r *ClassifierFileRepo) Update(classifier *bayesian.Classifier, class string, words []string) error {
+	switch class {
+	case "spam":
+		classifier.Learn(words, Spam)
+	case "ham":
+		classifier.Learn(words, Ham)
+	default:
+		return errors.New("unknown class " + class)
 	}
 
-	return resp.AsStrSlice()
+	return r.Save(classifier)
 }

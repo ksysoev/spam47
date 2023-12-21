@@ -4,15 +4,17 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/ksysoev/spam47/pkg/aggr"
 	"github.com/ksysoev/spam47/pkg/repo"
 )
 
 const (
-	DEFAULT_PORT = "80"
+	DEFAULT_PORT                = "80"
+	DEFAULT_CLASSIFIER_FILEPATH = "/tmp/classifier.gob"
 )
 
 type App struct {
-	engineRepo repo.EngineRepo
+	engine *aggr.SpamEngine
 }
 
 func New() *App {
@@ -24,12 +26,15 @@ func (a *App) Run() error {
 
 	slog.Info("Starting app server on " + listen)
 
-	repo, err := repo.NewEngineRedisRepo()
+	repo := repo.NewClassifierFileRepo(DEFAULT_CLASSIFIER_FILEPATH)
+
+	engine, err := aggr.NewSpamEngine(repo)
+
 	if err != nil {
 		return err
 	}
 
-	a.engineRepo = repo
+	a.engine = engine
 
 	return http.ListenAndServe(listen, a.Mux())
 }
