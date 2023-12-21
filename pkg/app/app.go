@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/ksysoev/spam47/pkg/aggr"
 	"github.com/ksysoev/spam47/pkg/repo"
@@ -10,23 +11,40 @@ import (
 
 const (
 	DEFAULT_PORT                = "80"
-	DEFAULT_CLASSIFIER_FILEPATH = "/tmp/classifier.gob"
+	DEFAULT_CLASSIFIER_FILEPATH = "/tmp/spam47.gob"
 )
 
 type App struct {
-	engine *aggr.SpamEngine
+	engine   *aggr.SpamEngine
+	port     string
+	datafile string
 }
 
 func New() *App {
-	return &App{}
+
+	datafile := os.Getenv("SPAM47_DATAFILE")
+
+	if datafile == "" {
+		datafile = DEFAULT_CLASSIFIER_FILEPATH
+	}
+
+	port := os.Getenv("SPAM47_PORT")
+	if port == "" {
+		port = DEFAULT_PORT
+	}
+
+	return &App{
+		datafile: datafile,
+		port:     port,
+	}
 }
 
 func (a *App) Run() error {
-	listen := ":" + DEFAULT_PORT
+	listen := ":" + a.port
 
 	slog.Info("Starting app server on " + listen)
 
-	repo := repo.NewClassifierFileRepo(DEFAULT_CLASSIFIER_FILEPATH)
+	repo := repo.NewClassifierFileRepo(a.datafile)
 
 	engine, err := aggr.NewSpamEngine(repo)
 
