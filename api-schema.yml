@@ -1,21 +1,92 @@
-openapi: "3.0.0"
+openapi: 3.0.3
 info:
-  title: Spam47 Service API
+  title:  Spam47 Service API
   version: 1.0.0
 paths:
   /livez:
     get:
-      operationId: heakthCheck
-      summary: Service Health Check
+      summary: Health check endpoint
       responses:
         '200':
-          description: |-
-            Service is healthy
+          description: OK
           content:
             application/json:
-              examples: 
-                healthy:
-                  value: |-
-                    {
-                      "status": "OK"
-                    }
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+  /check:
+    post:
+      summary: Check provided message is it a spam or ham
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResponse'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  /train:
+    post:
+      summary: Train the service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainRequest'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+components:
+  schemas:
+    CheckRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Hello world"
+        lang:
+          type: string
+          example: "en"
+    CheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "spam"
+          enum: 
+            - "spam"
+            - "ham"
+        score:
+          type: number
+          format: float
+          example: 0.9995
+    TrainRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Hello world"
+        type:
+          type: string
+          example: "ham"
+          enum: 
+            - "spam"
+            - "ham"
+        lang:
+          type: string
+          example: "en"
